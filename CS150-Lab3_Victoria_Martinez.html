@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<!--suppress ALL -->
+<html>
+<head>
+    <title>Paddle Ball Rendition by V</title>
+    <script src="p5.js"></script>
+
+<style>
+  .center
+  {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+  }
+</style>
+</head>
+
+<body>
+<!--This div item is a holder. In the JavaScript code, when the canvas is created,
+    it is placed inside this holder.
+    The purpose of this is that if we center this div, then the canvas will be centered.-->
+<div class="center" id="canvas-holder"> </div>
+
+<script>
+  "use strict";
+
+var canvasWidth  = 1000;
+var canvasHeight = 600;
+var paddleWidth = 300;
+var ballSize = 20;
+var paddleThickness = 10;
+var paddleTop = canvasHeight - paddleThickness - 30;
+var paddleX;
+
+
+// the current speed of the ball
+var ballSpeedX, ballSpeedY;
+
+// the current location of the ball
+var ballX = 0;
+var ballY = 0;
+var ballColor, paddleColor;
+
+var paddleSpeed = 5;
+
+// true if the game is in play, false if ball is attached to paddle waiting for a mouse click.
+var gameIsInPlay = false;
+
+//Keeping score
+var hitPoints = 0;
+
+//Keeping time
+var timeStamp = 0;
+
+//Level up
+var levelUp = 1;
+
+//=============================================================================================
+// Called by p5.js once when the page loads
+//=============================================================================================
+function setup()
+{
+  var canvas = createCanvas(canvasWidth, canvasHeight);
+
+  //Add the canvas to 'canvas-holder', which is the id of a <div> item in the html.
+  //   Since that <div> item is centered, the canvas inside it will be centered.
+  canvas.parent('canvas-holder');
+
+  ballColor = color(255, 255, 255);
+  paddleColor = color(250, 240, 230);
+  paddleX = mouseX;
+  //Uncomment this if you do not want to see outlines around the ball and paddle.
+  noStroke();
+}
+
+//=================================================================================
+// Called by p5.js 60 times per second.
+//=================================================================================
+function draw()
+{
+  background(0, 0, 0);
+
+  //Keeping Score
+  fill (115, 111, 117);
+  textSize(20);
+  text ("Hit Points:", 200, canvasHeight - 25, 800, 80);
+
+  fill (150, 150, 150);
+  textSize(20);
+  text (hitPoints, 300, canvasHeight - 25, 200, 80);
+
+  //Show time stamp
+  fill (115, 111, 117);
+  textSize(20);
+  text ("Time:", 600, canvasHeight - 25, 800, 80);
+
+  fill (150, 150, 150);
+  textSize(20);
+  text (timeStamp, 700, canvasHeight - 25, 200, 80);
+
+  //Showing level
+  fill(115, 111, 117);
+  textSize(48);
+  text("Level:   ", 400, 290);
+
+  fill(150, 150, 150);
+  textSize(120);
+  text(levelUp, 540, 320);
+
+  //Extreme Mode
+    if(hitPoints === 60)
+    {
+        //enter extreme mode
+        fill(150, 150, 150);
+        textSize(150);
+        text("EXTREME", 100, 370);
+        text("MODE", 200, 410);
+    }
+
+  if (mouseX < paddleX) paddleX -= min(paddleSpeed, abs(mouseX - paddleX));
+  else if (mouseX > paddleX) paddleX += min(paddleSpeed, abs(mouseX - paddleX));
+
+  // draw the paddle
+  fill(paddleColor);
+  rect(paddleX - paddleWidth/2, paddleTop, paddleWidth, paddleThickness);
+
+  if (paddleX - paddleWidth/2 < 0) paddleX = paddleWidth/2;
+  if (paddleX + paddleWidth/2 > 1000) paddleX = 1000 - paddleWidth/2;
+
+  // update the ball
+  if (gameIsInPlay)
+  {
+    ballX += ballSpeedX;
+    ballY += ballSpeedY;
+
+    // check if ball has hit the top wall
+    if (ballY <= ballSize/2)
+    {
+      ballSpeedY = Math.abs(ballSpeedY);
+    }
+    // check if the ball has hit the left wall
+    if (ballX <= ballSize/2)
+    {
+      ballSpeedX = Math.abs(ballSpeedX);
+    }
+    // check if the ball has hit the right wall
+    if (ballX >= canvasWidth-ballSize/2)
+    {
+      ballSpeedX = -Math.abs(ballSpeedX);
+    }
+
+    if (isHitPaddle())
+    {
+      ballSpeedY = -Math.abs(ballSpeedY);
+    }
+
+    // check if ball fell out the bottom
+    if (ballY >= canvasHeight)
+    {
+      gameIsInPlay = false;
+    }
+  }
+  else
+  {
+    ballX = paddleX;
+    ballY = paddleTop - ballSize/2;
+  }
+
+  // draw the ball
+  fill(ballColor);
+  ellipse(ballX, ballY, ballSize, ballSize);
+}
+
+//=======================================================================================================
+//  This function gets called by p5.js when the mouse is clicked.
+//=======================================================================================================
+function mouseClicked()
+{
+  if (!gameIsInPlay)   //Same meaning as if (playing === false)
+  {
+    //point reset
+    hitPoints = 0;
+
+    //level reset
+    levelUp = 1;
+
+    //paddle reset
+    paddleWidth = 300;
+    paddleSpeed = 5;
+
+    //time reset
+    //INSERT SOMETHING HERE
+
+    // reset the ball speed
+    ballSpeedX = Math.random()*4+2;
+    if (Math.random() < 0.5) ballSpeedX=-ballSpeedX;
+    ballSpeedY = -6;
+
+    ballX = paddleX;
+    ballY = paddleTop-ballSize;
+    gameIsInPlay = true;
+  }
+}
+
+
+//===========================================================================================
+// Return true if the ball is hitting the paddle. Otherwise, return false.
+//===========================================================================================
+function  isHitPaddle()
+{
+  //the ball is above the paddle.
+  if (ballY + ballSize/2 < paddleTop) return false;
+
+  //the ball is below the paddle.
+  if (ballY - ballSize/2 > paddleTop+paddleThickness) return false;
+
+  //the ball is right of the paddle.
+  if (ballX - ballSize/2 > paddleX+paddleWidth / 2) return false;
+
+  //the ball is left of the paddle.
+  if (ballX + ballSize/2 < paddleX-paddleWidth / 2) return false;
+
+  //add points
+  hitPoints++;
+
+  if(hitPoints === 3)
+  {
+      //level up
+      levelUp++;
+
+      //ball speed change 1 (increase)
+      ballSpeedX *= 1.25;
+      ballSpeedY *= 1.25;
+  }
+
+  if(hitPoints === 8)
+  {
+      //level up
+      levelUp++;
+
+      //paddle size change 1 (decrease)
+      paddleWidth -= 20;
+  }
+
+  if(hitPoints === 15)
+  {
+      //level up
+      levelUp++;
+
+      //ball size change 1 (increase)
+      ballSize += 3;
+
+      //ball speed change 2 (increase)
+      ballSpeedX *= 1.25;
+      ballSpeedY *= 1.25;
+
+      //paddle size change 2 (decrease)
+      paddleWidth -= 25;
+
+      //paddle speed change 1 (increase)
+      paddleSpeed *= 1.5;
+  }
+
+  if (hitPoints === 25)
+  {
+      //level up
+      levelUp++;
+
+      //ball speed change 3 (increase)
+      ballSpeedX *= 1.25;
+      ballSpeedY *= 1.25;
+
+      //paddle size change 3 (decrease)
+      paddleWidth -= 30;
+
+      //paddle speed change 2 (increase)
+      paddleSpeed *= 1.5;
+  }
+
+  if (hitPoints === 38)
+  {
+      //level up
+      levelUp++;
+
+      //ball speed change 4 (increase)
+      ballSpeedX *= 1.25;
+      ballSpeedY *= 1.25;
+
+      //paddle size change 4 (decrease)
+      paddleWidth -= 25;
+
+      //paddle speed change 3 (increase)
+      paddleSpeed *= 1.5;
+  }
+
+  if(hitPoints === 45)
+  {
+      //level up
+      levelUp++;
+
+      //ball speed change 5 (decrease)
+      ballSpeedX *= 2.5;
+      ballSpeedY *= 2.5;
+
+      //paddle speed change 4 (increase)
+      paddleSpeed *= 1.5;
+
+      //paddle size change 5 (decrease)
+      paddleWidth -= 20;
+  }
+
+  if(hitPoints === 48)
+  {
+      //level up
+      levelUp++;
+
+      //ball speed change 6 (increase)
+      ballSpeedX *= 3;
+      ballSpeedY *= 3;
+
+      //paddle size change 6 (decrease)
+      paddleWidth -= 15;
+
+      //paddle speed change 5 (increase)
+      paddleSpeed *= 1.5;
+  }
+
+  if(hitPoints === 60)
+  {
+      //enter extreme mode
+      fill(150, 150, 150);
+      textSize(150);
+      text("EXTREME", 100, 370);
+      text("MODE", 200, 410);
+
+      //level up
+      levelUp++;
+
+      //ball spped change 7 (increase)
+      ballSpeedX *= 1.25;
+      ballSpeedY *= 1.25;
+
+      //paddle size change 7 (decrease)
+      paddleWidth -= 25;
+
+      //paddle speed change 6 (increase)
+      paddleSpeed *= 1.5;
+  }
+
+  return true
+
+
+
+}
+
+</script>
+Welcome to Paddle Ball Rendition by V!
+This game has 8 levels of varying difficulty where your score is recorded via "Hit Points".
+When you reach 60 hit points, you enter Level 9: Extreme Mode and the timer starts.
+Test your paddle ball skills to the max!
+
+</body>
+</html>
